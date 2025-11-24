@@ -1,4 +1,4 @@
-# Prometheus GHA Collector
+# Prometheus GH Collector
 
 Minimal example showing how to export a Prometheus counter from events collected by a GitHub webhook
 
