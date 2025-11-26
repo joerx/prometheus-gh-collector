@@ -1,0 +1,56 @@
+logging {
+	level = "debug"
+
+	// Forward internal logs to the local Loki instance.
+	write_to = [loki.relabel.alloy_logs.receiver]
+}
+
+loki.relabel "alloy_logs" {
+	rule {
+		target_label = "instance"
+		replacement = sys.env("INSTANCE_ID")
+	}
+
+	rule {
+		target_label = "job"
+		replacement = "integrations/self"
+	}
+
+	forward_to = [loki.write.loki.receiver]
+}
+
+// Collect metrics from the local running Alloy instance and forward to Prometheus.
+prometheus.exporter.self "alloy" {}
+prometheus.scrape "alloy" {
+	targets    = prometheus.exporter.self.alloy.targets
+	forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+prometheus.scrape "gh_collector" {
+  targets = [
+    {"__address__" = "collector:9101", "job" = "gh_collector"},
+  ]
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = sys.env("MIMIR_HOST")
+
+    basic_auth {
+      username = sys.env("MIMIR_BASIC_AUTH_USER")
+      password = sys.env("MIMIR_BASIC_AUTH_PASSWORD")
+    }
+  }
+}
+
+loki.write "loki" {
+	endpoint {
+    url = sys.env("LOKI_HOST")
+
+    basic_auth {
+      username = sys.env("LOKI_BASIC_AUTH_USER")
+      password = sys.env("LOKI_BASIC_AUTH_PASSWORD")
+    }
+	}
+}

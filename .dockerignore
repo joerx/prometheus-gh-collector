@@ -2,4 +2,4 @@ Makefile
 LICENSE
 README.md
 .github
-out
+bin

@@ -1,0 +1,40 @@
+services:
+  collector:
+    build: .
+    ports:
+      - "9101:9101"
+    restart: always
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command:
+      - "http"
+      - "--log"
+      - "stdout"
+      - "http://collector:9101"
+    ports:
+      - 4040:4040
+  alloy:
+    image: grafana/alloy:latest
+    volumes:
+      - ./config/alloy:/etc/alloy
+    environment:
+      INSTANCE_ID: ${HOSTNAME}.alloy.local 
+      MIMIR_HOST: ${MIMIR_HOST}
+      MIMIR_BASIC_AUTH_USER: ${MIMIR_BASIC_AUTH_USER}
+      MIMIR_BASIC_AUTH_PASSWORD: ${GCLOUD_API_KEY}
+      LOKI_HOST: ${LOKI_HOST}
+      LOKI_BASIC_AUTH_USER: ${LOKI_BASIC_AUTH_USER}
+      LOKI_BASIC_AUTH_PASSWORD: ${GCLOUD_API_KEY}
+    depends_on:
+      - collector
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --stability.level=experimental
+    ports:
+      - '12345:12345'
