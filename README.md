@@ -32,7 +32,7 @@ curl localhost:9101/metrics | grep gha
 
 ## Docker Compose
 
-Docker compose can be used for end-to-end testing, it will bring up a stack of this collector, an instance of Alloy to scrape metrics and a publicly routable endpoint for webhooks using [ngrok](https://ngrok.com/)
+Docker compose can be used for end-to-end testing. It will bring up a stack of this collector, an instance of Alloy to scrape metrics and a publicly routable endpoint for webhooks using [ngrok](https://ngrok.com/):
 
 ![Docker compose stack](docs/docker-compose.png)
 
@@ -49,9 +49,10 @@ MIMIR_BASIC_AUTH_USER: <GCLOUD_HOSTED_METRICS_ID>
 LOKI_HOST: <GCLOUD_HOSTED_LOGS_URL>
 LOKI_BASIC_AUTH_USER: <GCLOUD_HOSTED_LOGS_ID>
 GCLOUD_API_KEY: <GCLOUD_API_KEY>
+NGROK_AUTHTOKEN: <NGROK_AUTHTOKEN>
 ```
 
-NB: To generate the `GCLOUD_API_KEY`, create a new [Grafana Cloud Access policy](https://grafana.com/docs/grafana-cloud/security-and-account-management/authentication-and-permissions/access-policies/) with `set:alloy-write` scope:
+NB: To generate the `GCLOUD_API_KEY`, create a [Grafana Cloud Access policy](https://grafana.com/docs/grafana-cloud/security-and-account-management/authentication-and-permissions/access-policies/) with `set:alloy-data-write` scope:
 
 ![Token with set:alloy-write permissions in Grafana control panel](docs/alloy-token.png)
 
@@ -59,8 +60,10 @@ NB: To generate the `GCLOUD_API_KEY`, create a new [Grafana Cloud Access policy]
 docker-compose up --build
 ```
 
-- The endpoint URL displayed by `ngrok` on start as a webhook in a Git repo
-- Alternatively, [example events](./examples/) can be used for testing:
+To test:
+
+- Use the endpoint URL displayed by `ngrok` on start as a webhook in a Git repo
+- Alternatively, use the included [example events](./examples):
 
 ```sh
 curl -v -XPOST -H "X-GitHub-Event:deployment" -d @examples/deployment.json localhost:9101/events
