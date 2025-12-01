@@ -11,16 +11,16 @@ IMG_REPO ?= ghcr.io/$(OWNER)/$(IMG_BASE)
 default: clean build
 
 .PHONY: build
-build: out/$(NAME)
+build: bin/$(NAME)
 
 .PHONY: clean
 clean:
-	rm -rf out
+	rm -rf bin
 
-out/$(NAME):
-	go build -o out/$(NAME) .
+bin/$(NAME):
+	go build -o bin/$(NAME) .
 
-docker-build: out/$(NAME)
+docker-build: bin/$(NAME)
 	docker build -t $(IMG_TAG) \
 	--label "org.opencontainers.image.source=$(REPO)" \
 	--label "org.opencontainers.image.description=Prometheus GitHub Collector" \
