@@ -68,3 +68,32 @@ To test:
 ```sh
 curl -v -XPOST -H "X-GitHub-Event:deployment" -d @examples/deployment.json localhost:9101/events
 ```
+
+## Local Kubernetes
+
+### Prerequisites
+
+- You need a local cluster, you can use [k3d](https://k3d.io/stable/), [minikube](https://minikube.sigs.k8s.io/docs/) or any other lightweight k8s distro
+- To make this work properly, there should at least be a metrics collector like [Prometheus]() or [Alloy]() installed in the cluster
+- The cluster should have an ingress controller, alternatively you can use port-forwarding
+- Create an image pull secret in the cluster to be able to fetch images from ghcr
+
+```sh
+kubectl create namespace gh-collector
+
+GITHUB_USERNAME=$(git config user.name)
+GITHUB_EMAIL=$(git config user.email)
+kubectl create secret -n gh-collector docker-registry ghcr-login-secret \
+--docker-server=https://ghcr.io \
+--docker-username=$GITHUB_USERNAME \
+--docker-password=$GITHUB_TOKEN \
+--docker-email=$GITHUB_EMAIL
+```
+
+### Helm Install
+
+```sh
+helm upgrade --install --namespace gh-collector \
+  --set imagePullSecrets[0].name=ghcr-login-secret \
+  charts/collector gh-collector 
+```
