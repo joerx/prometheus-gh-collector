@@ -40,6 +40,7 @@ Preconditions:
 
 - Instances of Mimir and Loki to receive logs and metrics. A free tier [Grafana Cloud](https://grafana.com/products/cloud/) account can provide the necessary
 - Free ngrok account to receive webhook events from GitHub
+- A webhook secret to use, you can generate one using `pwgen` or similar tools
 
 Create a `.env` file with the following contents:
 
@@ -50,6 +51,7 @@ LOKI_HOST: <GCLOUD_HOSTED_LOGS_URL>
 LOKI_BASIC_AUTH_USER: <GCLOUD_HOSTED_LOGS_ID>
 GCLOUD_API_KEY: <GCLOUD_API_KEY>
 NGROK_AUTHTOKEN: <NGROK_AUTHTOKEN>
+WEBHOOK_SECRET: <GENERATE_YOUR_OWN>
 ```
 
 NB: To generate the `GCLOUD_API_KEY`, create a [Grafana Cloud Access policy](https://grafana.com/docs/grafana-cloud/security-and-account-management/authentication-and-permissions/access-policies/) with `set:alloy-data-write` scope:
@@ -83,6 +85,7 @@ kubectl create namespace gh-collector
 
 GITHUB_USERNAME=$(git config user.name)
 GITHUB_EMAIL=$(git config user.email)
+
 kubectl create secret -n gh-collector docker-registry ghcr-login-secret \
 --docker-server=https://ghcr.io \
 --docker-username=$GITHUB_USERNAME \
@@ -93,7 +96,9 @@ kubectl create secret -n gh-collector docker-registry ghcr-login-secret \
 ### Helm Install
 
 ```sh
+make docker-push # build & deploy latest version
 helm upgrade --install --namespace gh-collector \
-  --set imagePullSecrets[0].name=ghcr-login-secret \
-  charts/collector gh-collector 
+  --create-namespace gh-collector ./charts/collector \
+  --set "image.tag=$(git rev-parse --short HEAD)" \
+  --set 'imagePullSecrets[0].name=ghcr-login-secret'
 ```
