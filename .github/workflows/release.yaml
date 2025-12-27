@@ -1,12 +1,12 @@
 name: publish
 
-# on:
-#   release:
-#     types: [created]
-
 on:
-  pull_request:
-    branches: [main]
+  release:
+    types: [created]
+
+# on:
+#   pull_request:
+#     branches: [main]
 
 jobs:
   terraform_test:
@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build & Publish to Container registry
         run: |
-          make docker-push VERSION=${GIT_SHA:0:7} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
+          make docker-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
       - name: Package & pulish helm chart
         run: |
           make helm-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
