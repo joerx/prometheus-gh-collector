@@ -1,12 +1,8 @@
 name: publish
 
-# on:
-#   release:
-#     types: [created]
-
 on:
-  pull_request:
-    branches: [main]
+  release:
+    types: [created]
 
 jobs:
   terraform_test:
@@ -16,7 +12,7 @@ jobs:
       contents: read
       packages: write
     env:
-      # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ github.ref_name }}
       REGISTRY: ghcr.io
       GIT_SHA: ${{ github.sha }}
@@ -34,22 +30,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build & Publish to Container registry
         run: |
-          make docker-push VERSION=${GIT_SHA:0:7} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
-      - name: Package & pulish helm chart
-        run: |
-          make helm-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
+          make docker-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
       - name: Set up Helm
-        # if: steps.chart.outputs.version != ''
         uses: azure/setup-helm@v4.3.1
         with:
           version: v3.19.0
       - name: Helm registry login
-        # if: steps.chart.outputs.version != ''
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+          echo ${GITHUB_TOKEN} | helm registry login ghcr.io \
             --username ${{ github.actor }} \
             --password-stdin
       - name: Package & Publish Helm Chart
-        # if: steps.chart.outputs.version != ''
         run: |
           make helm-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
