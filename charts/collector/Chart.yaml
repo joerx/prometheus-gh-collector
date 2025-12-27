@@ -2,6 +2,11 @@ apiVersion: v2
 name: prometheus-gh-collector
 description: A Helm chart for Kubernetes
 
+annotations:
+  org.opencontainers.image.source: https://github.com/joerx/prometheus-gh-collector
+  org.opencontainers.image.description: Helm chart for prometheus-gh-collector
+  org.opencontainers.image.licenses: Apache-2.0
+
 # A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
