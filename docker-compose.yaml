@@ -1,6 +1,11 @@
 services:
   collector:
     build: .
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+    command:
+      - "--webhook-secret"
+      - $(WEBHOOK_SECRET)
     ports:
       - "9101:9101"
     restart: always
@@ -8,7 +13,7 @@ services:
     image: ngrok/ngrok:latest
     restart: unless-stopped
     environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     command:
       - "http"
       - "--log"

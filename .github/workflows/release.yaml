@@ -1,0 +1,55 @@
+name: release
+
+# This workflow is triggered when a new release is created
+# It will build and publish the docker image and helm chart using the release tag as version
+# Output image and chart will be published to GitHub Container Registry (GHCR)
+#
+# Examples:
+#
+# docker pull ghcr.io/joerx/prometheus-gh-collector:v1.2.3
+# 
+# helm pull oci://ghcr.io/joerx/helm-charts/prometheus-gh-collector:v1.2.3
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release_artifacts:
+    name: Publish Module
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ github.ref_name }}
+      REGISTRY: ghcr.io
+      GIT_SHA: ${{ github.sha }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build binary
+        run: make build
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & Publish to Container registry
+        run: |
+          make docker-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.19.0
+      - name: Helm registry login
+        run: |
+          echo ${GITHUB_TOKEN} | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
+      - name: Package & Publish Helm Chart
+        run: |
+          make helm-push VERSION=${VERSION} REPO=${REPO} IMG_REGISTRY=${REGISTRY}

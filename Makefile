@@ -1,31 +1,58 @@
-NAME = prometheus-gh-collector
-OWNER = joerx
-REPO ?= https://github.com/$(OWNER)/$(NAME)
-VERSION ?= $(shell git rev-parse --short HEAD)
+REPO ?= joerx/prometheus-gh-collector
+SOURCE_URL ?= https://github.com/$(REPO)
 
-IMG_BASE ?= $(NAME)
-IMG_TAG ?= $(IMG_BASE):$(VERSION)
-IMG_REPO ?= ghcr.io/$(OWNER)/$(IMG_BASE)
+VERSION ?= v0.0.1-$(shell git rev-parse --short HEAD)
+CHART_VERSION ?= $(VERSION)
+# CHART_VERSION = $(shell cat charts/collector/Chart.yaml | yq -r '.version')
+
+IMG_REGISTRY ?= ghcr.io
+IMG_TAG ?= $(REPO):$(VERSION)
+
+OWNER = $(shell echo "$(REPO)" | awk -F/ '{print $$1}')
+NAME = $(shell echo "$(REPO)" | awk -F/ '{print $$2}')
+
+RELEASE_BRANCH ?= main
 
 .PHONY: default
 default: clean build
 
 .PHONY: build
-build: bin/$(NAME)
+build: out/bin/$(NAME)
 
 .PHONY: clean
 clean:
-	rm -rf bin
+	rm -rf out/
 
-bin/$(NAME):
-	go build -o bin/$(NAME) .
+.PHONY: release
+release:
+	gh release create $(VERSION) --title "Release $(VERSION)" --target $(RELEASE_BRANCH) --generate-notes
 
-docker-build: bin/$(NAME)
+test:
+	@echo "FIXME: No tests yet"
+
+out/bin/$(NAME):
+	go build -o out/bin/$(NAME) .
+
+docker-build:
 	docker build -t $(IMG_TAG) \
-	--label "org.opencontainers.image.source=$(REPO)" \
+	--label "org.opencontainers.image.source=$(SOURCE_URL)" \
 	--label "org.opencontainers.image.description=Prometheus GitHub Collector" \
 	--label "org.opencontainers.image.licenses=Apache-2.0" .
 
 docker-push: docker-build
-	docker tag $(IMG_TAG) $(IMG_REPO):$(VERSION)
-	docker push $(IMG_REPO):$(VERSION)
+	docker tag $(IMG_TAG) $(IMG_REGISTRY)/$(IMG_TAG)
+	docker push $(IMG_REGISTRY)/$(IMG_TAG)
+
+.PHONY: helm-package
+helm-package: out/charts/$(NAME)-$(CHART_VERSION).tgz
+
+out/charts/$(NAME)-$(CHART_VERSION).tgz:
+	mkdir -p out/charts
+	cp -r charts/collector out/charts/$(NAME)-$(CHART_VERSION)
+	yq -i '.annotations["org.opencontainers.image.source"] = "$(SOURCE_URL)"' out/charts/$(NAME)-$(CHART_VERSION)/Chart.yaml
+	yq -i '.version = "$(VERSION)"' out/charts/$(NAME)-$(CHART_VERSION)/Chart.yaml
+	helm package out/charts/$(NAME)-$(CHART_VERSION) --destination out/charts --app-version $(VERSION)
+
+.PHONY: helm-push
+helm-push: helm-package
+	helm push out/charts/$(NAME)-$(CHART_VERSION).tgz oci://ghcr.io/$(OWNER)/helm-charts
