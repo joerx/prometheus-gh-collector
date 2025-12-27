@@ -1,0 +1,19 @@
+name: test
+
+# This workflow is triggered on pull requests to the main branch
+# It will run the test suite to ensure code quality and functionality
+
+on:
+  pull_request:
+
+jobs:
+  run_tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Test
+        run: make test

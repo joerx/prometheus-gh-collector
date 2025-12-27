@@ -1,11 +1,21 @@
-name: publish
+name: release
+
+# This workflow is triggered when a new release is created
+# It will build and publish the docker image and helm chart using the release tag as version
+# Output image and chart will be published to GitHub Container Registry (GHCR)
+#
+# Examples:
+#
+# docker pull ghcr.io/joerx/prometheus-gh-collector:v1.2.3
+# 
+# helm pull oci://ghcr.io/joerx/helm-charts/prometheus-gh-collector:v1.2.3
 
 on:
   release:
     types: [created]
 
 jobs:
-  terraform_test:
+  release_artifacts:
     name: Publish Module
     runs-on: ubuntu-latest
     permissions:

@@ -27,6 +27,9 @@ clean:
 release:
 	gh release create $(VERSION) --title "Release $(VERSION)" --target $(RELEASE_BRANCH) --generate-notes
 
+test:
+	@echo "FIXME: No tests yet"
+
 out/bin/$(NAME):
 	go build -o out/bin/$(NAME) .
 
